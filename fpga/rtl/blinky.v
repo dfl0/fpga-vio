@@ -1,4 +1,7 @@
-module blinky(
+module blinky #(
+    parameter BIT_FAST = 22,
+    parameter BIT_SLOW = 23
+)(
     input clk10,
     input dip,
     output led
@@ -13,9 +16,9 @@ module blinky(
     begin
         counter <= counter + 1;
         if (dip)
-            ledState <= counter[22];
+            ledState <= counter[BIT_FAST];
         else
-            ledState <= counter[23];
+            ledState <= counter[BIT_SLOW];
     end
 
 endmodule
