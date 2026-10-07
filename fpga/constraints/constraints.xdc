@@ -1,15 +1,15 @@
 # Clock
-set_property PACKAGE_PIN W5 [get_ports {clock}]
-	set_property IOSTANDARD LVCMOS33 [get_ports {clock}]
-	create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports clock]
+set_property PACKAGE_PIN W5 [get_ports {clk10}]
+	set_property IOSTANDARD LVCMOS33 [get_ports {clk10}]
+	create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports clk10]
 
 # Switches
-set_property PACKAGE_PIN V17 [get_ports { sw_happy }]
-	set_property IOSTANDARD LVCMOS33 [get_ports { sw_happy }]
+set_property PACKAGE_PIN V17 [get_ports { dip }]
+	set_property IOSTANDARD LVCMOS33 [get_ports { dip }]
 
 # LEDS
-set_property PACKAGE_PIN L1 [get_ports { LEDs[0] }]
-	set_property IOSTANDARD LVCMOS33 [get_ports { LEDs[0] }]
+set_property PACKAGE_PIN L1 [get_ports { led }]
+	set_property IOSTANDARD LVCMOS33 [get_ports { led }]
 
 # Switches
 # set_property PACKAGE_PIN V16 [get_ports { sw_hunger }]
@@ -69,13 +69,13 @@ set_property PACKAGE_PIN L1 [get_ports { LEDs[0] }]
 # 	set_property IOSTANDARD LVCMOS33 [get_ports { LEDs[3] }]
 
 # SWITCH
-set_property PACKAGE_PIN R2 [get_ports { sw_reset }]
-	set_property IOSTANDARD LVCMOS33 [get_ports { sw_reset }]
+# set_property PACKAGE_PIN R2 [get_ports { sw_reset }]
+# 	set_property IOSTANDARD LVCMOS33 [get_ports { sw_reset }]
 
 # DIFFICULTY SWITCHES
-set_property PACKAGE_PIN T1 [get_ports { sw_easy }]
-	set_property IOSTANDARD LVCMOS33 [get_ports { sw_easy }]
-set_property PACKAGE_PIN U1 [get_ports { sw_med }]
-	set_property IOSTANDARD LVCMOS33 [get_ports { sw_med }]
-set_property PACKAGE_PIN W2 [get_ports { sw_hard }]
-	set_property IOSTANDARD LVCMOS33 [get_ports { sw_hard }]
+# set_property PACKAGE_PIN T1 [get_ports { sw_easy }]
+# 	set_property IOSTANDARD LVCMOS33 [get_ports { sw_easy }]
+# set_property PACKAGE_PIN U1 [get_ports { sw_med }]
+# 	set_property IOSTANDARD LVCMOS33 [get_ports { sw_med }]
+# set_property PACKAGE_PIN W2 [get_ports { sw_hard }]
+# 	set_property IOSTANDARD LVCMOS33 [get_ports { sw_hard }]

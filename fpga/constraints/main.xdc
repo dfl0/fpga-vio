@@ -1,26 +1,26 @@
 # Clock
 set_property PACKAGE_PIN W5 [get_ports {clk}]
 	set_property IOSTANDARD LVCMOS33 [get_ports {clk}]
-	create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports clock]
+	create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports clk]
 
 
 # Debug
-set_property PACKAGE_PIN V17 [get_ports {reset}]
-	set_property IOSTANDARD LVCMOS33 [get_ports {reset}]
+set_property PACKAGE_PIN V17 [get_ports {rst}]
+	set_property IOSTANDARD LVCMOS33 [get_ports {rst}]
 set_property PACKAGE_PIN U16 [get_ports {valid}]
 	set_property IOSTANDARD LVCMOS33 [get_ports {valid}]
 set_property PACKAGE_PIN E19 [get_ports {init_error}]
 	set_property IOSTANDARD LVCMOS33 [get_ports {init_error}]
 
 # PMOD pins
-set_property PACKAGE_PIN J1 [get_ports cs_n]					
-	set_property IOSTANDARD LVCMOS33 [get_ports cs_n]
-set_property PACKAGE_PIN L2 [get_ports sck]					
-	set_property IOSTANDARD LVCMOS33 [get_ports sck]
-set_property PACKAGE_PIN J2 [get_ports mosi]					
-	set_property IOSTANDARD LVCMOS33 [get_ports mosi]
-set_property PACKAGE_PIN G2 [get_ports miso]					
-	set_property IOSTANDARD LVCMOS33 [get_ports miso]
+set_property PACKAGE_PIN J1 [get_ports {cs_n}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {cs_n}]
+set_property PACKAGE_PIN L2 [get_ports {sck}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {sck}]
+set_property PACKAGE_PIN J2 [get_ports {mosi}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {mosi}]
+set_property PACKAGE_PIN G2 [get_ports {miso}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {miso}]
 
 
 # 7 Segment Display

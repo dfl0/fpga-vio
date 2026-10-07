@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Sync the Vivado project with the current sources, then open the GUI.
+#   ./vivado.bash          sync + open
+#   ./vivado.bash clean    recreate from scratch + open
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# Repo root = folder containing this script (pwd -W gives C:/... paths on Git Bash)
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && (pwd -W 2>/dev/null || pwd))"
 
 source "$REPO_DIR/project.env"
 
@@ -22,4 +24,4 @@ fi
 mkdir -p "$REPO_DIR/$BUILD_DIR/vivado"
 cd "$REPO_DIR/$BUILD_DIR/vivado"
 
-"$VIVADO" -mode gui -source "$SCRIPT_DIR/project.tcl" "${ARGS[@]}"
+"$VIVADO" -mode gui -source "$REPO_DIR/fpga/vivado/project.tcl" "${ARGS[@]}"

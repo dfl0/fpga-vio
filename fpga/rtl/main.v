@@ -3,8 +3,8 @@ module main(
 
     // debug
     input rst, // v17
-    output reg valid, // u16
-    output reg init_error, // e19
+    output wire valid, // u16
+    output wire init_error, // e19
 
     // icm20948
     output wire cs_n,
@@ -13,21 +13,31 @@ module main(
     input wire miso,
 
     // sseg
-    output reg [3:0] anode,
-    output reg [6:0] seg_out
+    output wire [3:0] anode,
+    output wire [6:0] seg_out
 );
 
     reg [7:0] accel_y_h;
-    reg [16:0] display_value;
+    wire [16:0] display_value;
     
     assign display_value = {8'b0, accel_y_h};
     
     icm20948_controller imu (
-        .*
+        .clk(clk),
+        .rst(rst),
+        .valid(valid),
+        .init_error(init_error),
+        .cs_n(cs_n),
+        .sck(sck),
+        .mosi(mosi),
+        .miso(miso)
     );
 
     sseg display (
-        .*
+        .clk(clk),
+        .display_value(display_value),
+        .anode(anode),
+        .seg_out(seg_out)
     );
 
 endmodule
