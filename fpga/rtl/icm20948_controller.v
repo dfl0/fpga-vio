@@ -1,5 +1,3 @@
-`timescale 1ns/1ps
-
 module icm20948_controller #(
     parameter integer CLK_HZ = 100_000_000,
     parameter integer CLK_DIV = 50

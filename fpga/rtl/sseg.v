@@ -1,7 +1,7 @@
     // shows value of 16 bit number
     module sseg (
         input clk,
-        input reg [15:0] value, 
+        input reg [15:0] display_value, 
 
         output reg [3:0] anode,
         output reg [6:0] seg_out, 
@@ -18,19 +18,19 @@
             // select the current digit
             case (anode_ctr)
                 2'b00: begin
-                    cur_digit = value[3:0];
+                    cur_digit = display_value[3:0];
                     anode = 4'b1110;
                 end
                 2'b01: begin
-                    cur_digit = value[7:4];
+                    cur_digit = display_value[7:4];
                     anode = 4'b1101;
                 end
                 2'b10: begin
-                    cur_digit = value[11:8];
+                    cur_digit = display_value[11:8];
                     anode = 4'b1011;
                 end
                 2'b11: begin
-                    cur_digit = value[15:12];
+                    cur_digit = display_value[15:12];
                     anode = 4'b0111;
                 end
                 default: begin
