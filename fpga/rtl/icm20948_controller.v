@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module icm20948_controller #(
     parameter integer CLK_HZ = 100_000_000,
     parameter integer CLK_DIV = 50
@@ -52,7 +54,8 @@ module icm20948_controller #(
     localparam integer ACCEL_SETTLE_CYCLES = (CLK_HZ / 1000) * 30; // allow 30 ms after wake for the accelerometer (20 ms typical in datasheet)
     reg [31:0] wait_count;
 
-    localparam [4:0] POWERUP_WAIT     = 5'd0,
+    // possible states
+    localparam [4:0] POWERUP_WAIT    = 5'd0,
                      CFG_ISSUE_ADDR  = 5'd1,
                      CFG_WAIT_ADDR   = 5'd2,
                      CFG_ISSUE_DATA  = 5'd3,

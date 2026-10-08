@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module spi_master #(
     parameter integer CLK_DIV = 50
 )(
