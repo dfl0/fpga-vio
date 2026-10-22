@@ -20,11 +20,11 @@ module main (
     output wire dp
 );
 
-    wire [7:0] accel_y_h;
+    wire signed [15:0] accel_x;
     wire sample_valid;
     wire [15:0] display_value;
 
-    assign display_value = {8'b0, accel_y_h};
+    assign display_value = accel_x;
     assign dp = 1'b1; // active-low decimal point, off
 
     // latch controller's one clock wide valid signal to see it on the LED
@@ -38,7 +38,12 @@ module main (
     icm20948_controller imu (
         .clk(clk),
         .rst(rst),
-        .accel_y_h(accel_y_h),
+        .accel_x(accel_x),
+        .accel_y(),
+        .accel_z(),
+        .gyro_x(),
+        .gyro_y(),
+        .gyro_z(),
         .valid(sample_valid),
         .init_error(init_error),
         .cs_n(cs_n),
