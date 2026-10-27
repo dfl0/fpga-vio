@@ -24,8 +24,8 @@ module uart_transmitter #(
     // logic pins
     output reg valid,
     output reg ready,
-    input reg start,
-    input reg [7:0] data
+    input wire start,
+    input wire [7:0] data
 );
     // constants
     localparam [1:0] READY    = 2'b00,
