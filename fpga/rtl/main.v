@@ -7,6 +7,9 @@ module main (
     input wire rst, // v17
     output reg sample_seen, // u16
     output wire init_error, // e19
+    
+    // uart
+    output wire tx,
 
     // icm20948
     output wire cs_n,
@@ -58,6 +61,18 @@ module main (
         .display_value(display_value),
         .anode(anode),
         .seg_out(seg_out)
+    );
+
+    
+    // DEBUG: for now just output the MSB of accel_x
+    wire [7:0] uart_data;
+    assign uart_data = accel_x[7:0];
+
+    uart_controller uart(
+        .clk(clk),
+        .rst(rst),
+        .tx(tx),
+        .data(uart_data)
     );
 
 endmodule
