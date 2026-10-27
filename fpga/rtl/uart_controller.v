@@ -16,7 +16,7 @@ module uart_controller #(
     // hardware pins
     input wire clk,
     input wire rst,
-    output reg tx,
+    output wire tx,
 
     // logic pins
     // NOTE: wire for now
@@ -32,8 +32,8 @@ module uart_controller #(
     reg tx_start;
 
     // outputs
-    reg tx_valid;
-    reg tx_ready;
+    wire tx_valid;
+    wire tx_ready;
 
     // hook up uart_transmitter
     uart_transmitter #(

@@ -25,17 +25,33 @@ module main (
 
     wire signed [15:0] accel_x;
     wire sample_valid;
-    wire [15:0] display_value;
 
-    assign display_value = accel_x;
-    assign dp = 1'b1; // active-low decimal point, off
-
-    // latch controller's one clock wide valid signal to see it on the LED
+        // latch controller's one clock wide valid signal to see it on the LED
     always @(posedge clk) begin
         if (rst)
             sample_seen <= 1'b0;
         else if (sample_valid)
             sample_seen <= 1'b1;
+    end
+
+    // NORMAL
+    // wire [15:0] display_value;
+    // assign display_value = accel_x;
+    // assign dp = 1'b1; // active-low decimal point, off
+
+    // DEBUG DISPLAY AT LOWER FREQ
+    reg [15:0] display_value;
+    reg [30:0] delay;
+    always @(posedge clk) begin
+        if (rst) begin
+            delay <= 0;
+        end else begin
+            if (delay == 0) begin
+                display_value <= accel_x;
+            end else begin
+                delay <= delay + 1;
+            end
+        end
     end
 
     icm20948_controller imu (
@@ -66,13 +82,13 @@ module main (
     
     // DEBUG: for now just output the MSB of accel_x
     wire [7:0] uart_data;
-    assign uart_data = accel_x[7:0];
-
+    assign uart_data = display_value[7:0];
     uart_controller uart(
         .clk(clk),
         .rst(rst),
         .tx(tx),
         .data(uart_data)
     );
+
 
 endmodule
