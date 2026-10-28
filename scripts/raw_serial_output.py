@@ -6,7 +6,7 @@ Install requirements.txt and activate venv to run this script
 import serial
 
 PORT = "COM7"
-BAUD_RATE = 115200
+BAUD_RATE = 2_000_000
 
 def main():
     try:
@@ -33,3 +33,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
