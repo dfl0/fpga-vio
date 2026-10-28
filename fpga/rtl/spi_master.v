@@ -65,7 +65,7 @@ module spi_master #(
             end else begin
                 // active transaction, generate SPI clock signal
                 if (clk_div_cnt == CLK_DIV - 1) begin // half-period reached
-                    clk_div_cnt <= 1'b0;
+                    clk_div_cnt <= 0;
 
                     if (!sck) begin // rising (leading) edge
                         // drive SPI clock high and read first bit on miso

@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 
 /*
-NOTES:
+NOTES
 - Supports max 12Mbaud (limited by Basys3's onboard FTH2332 chip)
     - No check included, up to module user
 - Only set data when ready is 1

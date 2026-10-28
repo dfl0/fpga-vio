@@ -2,20 +2,27 @@
 
 // display 16-bit hex value
 module sseg (
+    // hardware
     input wire clk,
     input wire rst,
-    input wire [15:0] display_value,
     output reg [3:0] anode,
-    output reg [6:0] seg_out
+    output reg [6:0] seg_out,
+    output wire dp,
+
+    // logic
+    input wire [15:0] display_value
 );
 
     // at 100 MHz, advance one digit about 480 times per second (120 scans/s)
     localparam integer CYCLES_PER_DIGIT = 100_000_000 / 480;
-    reg [17:0] scan_count;
+    reg [31:0] scan_count;
     reg [1:0] anode_ctr;
     reg [3:0] cur_digit;
 
     always @(*) begin
+        // dp always off
+        dp = 1'b1;
+
         case (anode_ctr)
             2'b00: begin
                 cur_digit = display_value[3:0];
@@ -63,13 +70,15 @@ module sseg (
 
     always @(posedge clk) begin
         if (rst) begin
-            scan_count <= 18'd0;
-            anode_ctr <= 2'd0;
-        end else if (scan_count == CYCLES_PER_DIGIT - 1) begin
-            scan_count <= 18'd0;
-            anode_ctr <= anode_ctr + 1;
+            scan_count <= 0;
+            anode_ctr <= 0;
         end else begin
-            scan_count <= scan_count + 1'b1;
+            if (scan_count == CYCLES_PER_DIGIT - 1) begin
+                scan_count <= 0;
+                anode_ctr <= anode_ctr + 1;
+            end else begin
+                scan_count <= scan_count + 1;
+            end
         end
     end
 

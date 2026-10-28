@@ -6,8 +6,6 @@ set_property PACKAGE_PIN W5 [get_ports {clk}]
 # Debug
 set_property PACKAGE_PIN V17 [get_ports {rst}]
 	set_property IOSTANDARD LVCMOS33 [get_ports {rst}]
-set_property PACKAGE_PIN U16 [get_ports {sample_seen}]
-	set_property IOSTANDARD LVCMOS33 [get_ports {sample_seen}]
 set_property PACKAGE_PIN E19 [get_ports {init_error}]
 	set_property IOSTANDARD LVCMOS33 [get_ports {init_error}]
 

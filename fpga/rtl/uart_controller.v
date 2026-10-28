@@ -5,7 +5,7 @@ NOTES
 - What should be the datatypes (wire/reg) that drives the data for transmitter and this controller module?
 - How can I guarentee that tx_start wont be 1 when tx_valid is set?
 
-TODO:
+TODO
 - Right now will only send the latest updated value for tx_byte
     - Add a FIFO/buffer to not miss any data
     - If serialization added, then change data from reg to wire
@@ -48,7 +48,6 @@ module uart_controller #(
         .data(data)
     );
 
-
     // procedural
     always @(posedge clk) begin
         if (rst) begin
@@ -70,7 +69,7 @@ module uart_controller #(
                         current_state <= SEND;
                     end
                 end
-                // shoudl never reach here
+                // should never reach here
                 default: begin
                     current_state <= SEND;
                 end
