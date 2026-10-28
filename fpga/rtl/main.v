@@ -21,21 +21,29 @@ module main (
     output wire [6:0] seg_out,
     output wire dp
 );
+    // constants
+    localparam [15:0] MAGIC_HEADER = 16'hABCD;
 
     // internal
-    wire signed [15:0] accel_x;
-    wire [7:0] uart_data;
+    reg [111:0] cur_frame;
+    wire [15:0] accel_x,
+                accel_y,
+                accel_z,
+                gyro_x,
+                gyro_y,
+                gyro_z;
+    wire imu_done;
 
     icm20948_controller imu (
         .clk(clk),
         .rst(rst),
         .accel_x(accel_x),
-        .accel_y(),
-        .accel_z(),
-        .gyro_x(),
-        .gyro_y(),
-        .gyro_z(),
-        .valid(),
+        .accel_y(accel_y),
+        .accel_z(accel_z),
+        .gyro_x(gyro_x),
+        .gyro_y(gyro_y),
+        .gyro_z(gyro_z),
+        .valid(imu_done),
         .init_error(init_error),
         .cs_n(cs_n),
         .sck(sck),
@@ -43,21 +51,45 @@ module main (
         .miso(miso)
     );
     
-    uart_controller uart(
+    uart_controller #(.BAUD_RATE(12_000_000)) uart(
         .clk(clk),
         .rst(rst),
         .tx(tx),
-        .data(uart_data)
+        .frame(cur_frame)
     );
 
-    // START DISPLAY CODE
-    // NORMAL FREQ
-    // wire [15:0] display_value;
-    // assign display_value = accel_x;
-    // assign dp = 1'b1; // active-low decimal point, off
+    /// FRAME UPDATE LOGIC
+    always @(posedge clk) begin
+        if (imu_done) begin
+            cur_frame <= {
+                MAGIC_HEADER,
+                accel_x,
+                accel_y,
+                accel_z,
+                gyro_x,
+                gyro_y,
+                gyro_z
+            };
+        end
+    end
 
-    // LOWER FREQ DISPLAY FOR DEBUG
+    /// SSEG DISPLAY CODE
     reg [15:0] display_value;
+    sseg display (
+        .clk(clk),
+        .rst(rst),
+        .anode(anode),
+        .seg_out(seg_out),
+        .dp(dp),
+        .display_value(display_value)
+    );
+
+    // Normal Freq Implementation
+    // always @(*) begin
+    //     display_value = accel_x;
+    // end
+
+    // Lower Freq Implementation
     reg [30:0] delay;
     always @(posedge clk) begin
         if (rst) begin
@@ -71,15 +103,4 @@ module main (
         end
     end
 
-    sseg display (
-        .clk(clk),
-        .rst(rst),
-        .anode(anode),
-        .seg_out(seg_out),
-        .dp(dp),
-        .display_value(display_value)
-    );
-
-    assign uart_data = display_value[7:0];
-    // END DISPLAY CODE
 endmodule

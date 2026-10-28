@@ -38,7 +38,6 @@ module icm20948_controller #(
         .last(spi_last),
         .tx_byte(spi_tx_byte),
         .rx_byte(spi_rx_byte),
-        .busy(),
         .done(spi_done),
         .cs_n(cs_n),
         .sck(sck),

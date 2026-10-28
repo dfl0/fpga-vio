@@ -11,7 +11,6 @@ module spi_master #(
     input wire last,
     input wire [7:0] tx_byte,
     output reg [7:0] rx_byte,
-    output reg busy,
     output reg done,
 
     // SPI pins      physical pin labels on Adafruit ICM-20948
@@ -21,11 +20,12 @@ module spi_master #(
     input wire miso  // SDO
 );
     // internal state
-    localparam integer DIV_WIDTH = (CLK_DIV <= 1) ? 1 : $clog2(CLK_DIV);
-    reg [DIV_WIDTH-1:0] clk_div_cnt;
+    // localparam integer DIV_WIDTH = (CLK_DIV <= 1) ? 1 : $clog2(CLK_DIV);
+    reg [31:0] clk_div_cnt;
     reg [2:0] bit_count;
     reg [7:0] tx_shift;
     reg [7:0] rx_shift;
+    reg busy;
 
     always @(posedge clk) begin
         if (rst) begin
