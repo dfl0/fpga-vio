@@ -51,7 +51,7 @@ module main (
         .miso(miso)
     );
     
-    uart_controller #(.BAUD_RATE(12_000_000)) uart(
+    uart_controller #(.BAUD_RATE(2_000_000)) uart(
         .clk(clk),
         .rst(rst),
         .tx(tx),
@@ -90,10 +90,10 @@ module main (
     // end
 
     // Lower Freq Implementation
-    reg [30:0] delay;
+    reg [20:0] delay;
     always @(posedge clk) begin
         if (rst) begin
-            delay <= 0;
+            delay <= 1;
         end else begin
             if (delay == 0) begin
                 display_value <= accel_x;

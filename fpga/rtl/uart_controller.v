@@ -70,9 +70,9 @@ module uart_controller #(
                         current_state <= LOAD_FRAME;
                     // else load the next packet
                     end else begin
-                        current_packet <= loaded_frame[7:0];
+                        current_packet <= loaded_frame[111:104]; // MSB first
                         // shift loaded_frame for next packet
-                        loaded_frame <= {loaded_frame[111:8], 8'h00};
+                        loaded_frame <= {loaded_frame[103:0], 8'h00};
                         packet_idx <= packet_idx + 1;
                         current_state <= SEND_PACKET;
                     end
