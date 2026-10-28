@@ -19,10 +19,10 @@ module sseg (
     reg [1:0] anode_ctr;
     reg [3:0] cur_digit;
 
-    always @(*) begin
-        // dp always off
-        dp = 1'b1;
+    // dp always off
+    assign dp = 1;
 
+    always @(*) begin
         case (anode_ctr)
             2'b00: begin
                 cur_digit = display_value[3:0];
