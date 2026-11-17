@@ -22,7 +22,14 @@ module ov7670_controller #(
     parameter integer XCLK_FREQ = 24_000_000,
     parameter integer SCCB_FREQ = 200_000,
     parameter integer WIDTH = 160,
-    parameter integer HEIGHT = 120
+    parameter integer HEIGHT = 120,
+
+    // NOTE: TEMPORARY CROP (set to middle 16x16 of QQVGA for now)
+    parameter integer CROP_X = 320,
+    parameter integer CROP_Y = 240,
+    parameter integer CROP_W = 8,
+    parameter integer CROP_H = 8
+
 )(
     input wire clk,
     input wire rst,
@@ -40,7 +47,10 @@ module ov7670_controller #(
 
     // module interface
     output reg ready, // 1 clk pulse when a full frame is stored
-    output reg [WIDTH*HEIGHT*16-1:0] image // 16 bits per pixel, row by row
+
+    // NOTE: TEMPORARY CROP
+    // output reg [WIDTH*HEIGHT*16-1:0] image // 16 bits per pixel, row by row
+    output reg [CROP_W*CROP_H*16-1:0] image
 );
 
     // TODO: add actual sccb controller
@@ -94,7 +104,12 @@ module ov7670_controller #(
                CAPTURE = 1'b1;
     reg current_state;
     integer cur_row, cur_col, byte_addr;
-    always @(*) byte_addr = cur_row*WIDTH*16 + (cur_col ^ 1)*8;
+
+    // NOTE: TEMPORARY CROP CHANGES
+    // always @(*) byte_addr = cur_row*WIDTH*16 + (cur_col ^ 1)*8;
+    always @(*) byte_addr = (cur_row - CROP_Y)*CROP_W*16 + ((cur_col - 2*CROP_X) ^ 1)*8;
+    wire in_crop = (cur_row >= CROP_Y) && (cur_row < CROP_Y + CROP_H) &&
+                   (cur_col >= 2*CROP_X) && (cur_col < 2*(CROP_X + CROP_W));
 
     always @(posedge clk) begin
         // set ready to 0 every cycle
@@ -122,7 +137,10 @@ module ov7670_controller #(
                     end
                     // if we received a new byte for current row
                     if (byte_valid) begin
-                        image[byte_addr +: 8] <= d;
+                        // NOTE: TEMPORARY CROP 
+                        // image[byte_addr +: 8] <= d;
+                        if (in_crop) image[byte_addr +: 8] <= d;
+
                         cur_col <= cur_col + 1;
                     end
                     // done reading current row

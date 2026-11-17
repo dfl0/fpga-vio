@@ -2,18 +2,15 @@
 
 /*
 NOTES
+- "start" signals module to send current frame
+- "ready" signals if module able to send next frame
 - Takes in frame and sends it fully before sending next one
-    - Right now sends 112 bit frame (14 packets)
-    - Frame can be changed multiple times, only latest value
-        - NOTE: might need busy to prevent writing during copying
-
-TODO
-- Make FRAME_SIZE parameter
-    - Also derive packet index and other frame sizes from this
+    - Make sure FRAME_SIZE is divisible by 8
 */
 
 module uart_controller #(
-    parameter integer BAUD_RATE = 115_200
+    parameter integer BAUD_RATE = 115_200,
+    parameter integer FRAME_SIZE = 112
 )(
     // hardware pins
     input wire clk,
@@ -21,26 +18,17 @@ module uart_controller #(
     output wire tx,
 
     // logic pins
-    input wire [111:0] frame
-);
-    // constants
-    localparam [1:0] LOAD_FRAME  = 2'b00,
-                     LOAD_PACKET = 2'b01,
-                     SEND_PACKET = 2'b10,
-                     WAIT_PACKET = 2'b11; 
-    
-    // internal
-    reg [1:0] current_state;
+    input wire [FRAME_SIZE-1:0] frame,
 
-    reg [111:0] loaded_frame;
-    reg [15:0] packet_idx; // supports max packet count 65535 (524288 bits)
-    reg [7:0] current_packet;
-    
+    // module interface
+    input wire start,
+    output wire ready
+
+);       
+    // TRANSMITTER
     reg tx_start;
     wire tx_valid;
     wire tx_ready;
-    
-    // hook up uart_transmitter
     uart_transmitter #(
         .BAUD_RATE(BAUD_RATE)
     ) transmitter (
@@ -53,27 +41,44 @@ module uart_controller #(
         .data(current_packet)
     );
 
+    // STATE MACHINE
+    localparam [1:0] IDLE        = 2'b00,
+                     LOAD_PACKET = 2'b01,
+                     SEND_PACKET = 2'b10,
+                     WAIT_PACKET = 2'b11; 
+    reg [1:0] current_state;     
+    assign ready = current_state == IDLE;
+
+    localparam integer PACKET_COUNT = FRAME_SIZE / 8;
+    localparam integer PCK_CNT_WIDTH = $clog2(PACKET_COUNT);
+    reg [FRAME_SIZE-1:0] loaded_frame;
+    reg [PCK_CNT_WIDTH:0] packet_ctr;
+    reg [7:0] current_packet;
+
     always @(posedge clk) begin
         if (rst) begin
             tx_start <= 0;
-            current_state <= LOAD_FRAME;
+            current_state <= IDLE;
         end else begin
             case (current_state)
-                LOAD_FRAME: begin
-                    loaded_frame <= frame;
-                    packet_idx <= 0;
-                    current_state <= LOAD_PACKET;
+                IDLE: begin
+                    // check if time to start
+                    if (start) begin
+                        loaded_frame <= frame;
+                        packet_ctr <= 0;
+                        current_state <= LOAD_PACKET;
+                    end
                 end
                 LOAD_PACKET: begin
                     // check if we finished
-                    if (packet_idx == 14) begin
-                        current_state <= LOAD_FRAME;
+                    if (packet_ctr == PACKET_COUNT) begin
+                        current_state <= IDLE;
                     // else load the next packet
                     end else begin
-                        current_packet <= loaded_frame[111:104]; // MSB first
-                        // shift loaded_frame for next packet
-                        loaded_frame <= {loaded_frame[103:0], 8'h00};
-                        packet_idx <= packet_idx + 1;
+                        // load MSB
+                        current_packet <= loaded_frame[FRAME_SIZE-1 -: 8];
+                        loaded_frame <= { loaded_frame[FRAME_SIZE-9:0], 8'd0 };
+                        packet_ctr <= packet_ctr + 1;
                         current_state <= SEND_PACKET;
                     end
                 end
@@ -93,7 +98,7 @@ module uart_controller #(
                 end
                 // should never reach here
                 default: begin
-                    current_state <= LOAD_FRAME;
+                    current_state <= IDLE;
                 end
             endcase
         end
