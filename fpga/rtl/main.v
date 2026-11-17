@@ -14,18 +14,15 @@ module main (
     output wire cs_n,  // JA1 -> CS
     output wire sck,   // JA2 -> SCL
     output wire mosi,  // JA3 -> SDA
-    input wire miso,   // JA4 ->SDO
+    input wire miso,   // JA4 -> SDO
 
     // sseg
     output wire [3:0] anode,
     output wire [6:0] seg_out,
     output wire dp
 );
-    // constants
-    localparam [15:0] MAGIC_HEADER = 16'hABCD;
 
-    // internal
-    reg [111:0] cur_frame;
+    // IMU HOOKUP
     wire [15:0] accel_x,
                 accel_y,
                 accel_z,
@@ -33,7 +30,6 @@ module main (
                 gyro_y,
                 gyro_z;
     wire imu_done;
-
     icm20948_controller imu (
         .clk(clk),
         .rst(rst),
@@ -51,15 +47,28 @@ module main (
         .miso(miso)
     );
     
+    // UART HOOKUP
+    localparam [15:0] MAGIC_HEADER = 16'hABCD;
+    localparam integer FRAME_SIZE = 112;
+    reg [FRAME_SIZE-1:0] cur_frame;
+    reg uart_start;
+    wire uart_ready;
     uart_controller #(.BAUD_RATE(2_000_000)) uart(
         .clk(clk),
         .rst(rst),
         .tx(tx),
-        .frame(cur_frame)
+        .frame(cur_frame),
+        .start(uart_start),
+        .ready(uart_ready)
     );
 
     /// FRAME UPDATE LOGIC
     always @(posedge clk) begin
+        uart_start <= 0;
+        // constantly send current frame
+        if (uart_ready) begin
+            uart_start <= 1;
+        end
         if (imu_done) begin
             cur_frame <= {
                 MAGIC_HEADER,
