@@ -11,7 +11,7 @@
 #   make all               		   Run all testbenches.
 #   make clean             		   Remove sim/.
 
-SRC   := $(wildcard rtl/*.v)
+SRC := $(shell find rtl -name '*.v')
 ALLTB := $(patsubst tb/%_tb.v,%,$(wildcard tb/*_tb.v))
 VIEWER ?= surfer
 
