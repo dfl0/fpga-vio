@@ -1,0 +1,8 @@
+TartanAir ArchVizTinyHouseDay Data_easy/P000 sample
+Source: https://theairlab.org/tartanair-dataset/
+Creators: Wenshan Wang et al., TartanAir: A Dataset to Push the Limits of Visual SLAM
+License: Creative Commons Attribution 4.0 International
+https://creativecommons.org/licenses/by/4.0/
+
+Frames 000000 through 000019 are included. Image files are unchanged.
+Pose, camera-time, and IMU files were truncated to the included frame interval and their line endings were normalized to LF.
