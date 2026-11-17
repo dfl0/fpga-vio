@@ -53,9 +53,17 @@ module ov7670_controller #(
     output reg [CROP_W*CROP_H*16-1:0] image
 );
 
-    // TODO: add actual sccb controller
-    assign sio_c = 1'b1; // idle bus
-    assign sio_d = 1'bz; // released (pulled up)
+    // HOOKUP OV7670 INITIALIZER
+    reg init_start;
+    wire init_done;
+    ov7670_init #(.SCCB_FREQ(SCCB_FREQ)) init (
+        .clk(clk),
+        .rst(rst),
+        .sio_c(sio_c),
+        .sio_d(sio_d),
+        .start(init_start),
+        .done(init_done)
+    );
 
     // XCLK
     localparam integer XCLK_HP_CYCLES = 100_000_000 / XCLK_FREQ / 2;
@@ -115,14 +123,15 @@ module ov7670_controller #(
         // set ready to 0 every cycle
         ready <= 0;
         if (rst) begin
+            // start the initialization seq
             current_state <= IDLE;
-            cur_row <= 0;
-            cur_col <= 0;
+            init_start <= 1;
         end else begin
             case (current_state)
-                // only in this state to align image frames
+                // initialize
                 IDLE: begin
-                    if (vsync_rise) begin
+                    init_start <= 0;
+                    if (init_done && vsync_rise) begin
                         current_state <= CAPTURE;
                         cur_row <= 0;
                         cur_col <= 0;
@@ -149,7 +158,10 @@ module ov7670_controller #(
                         cur_col <= 0;
                     end
                 end
-                default: current_state <= IDLE;
+                default: begin
+                    init_start <= 1;
+                    current_state <= IDLE;
+                end
             endcase
         end
     end

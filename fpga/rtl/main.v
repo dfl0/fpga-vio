@@ -2,7 +2,6 @@
 
 module main (
     input wire clk,
-
     // debug
     input wire rst, // V17
     output wire init_error, // E19

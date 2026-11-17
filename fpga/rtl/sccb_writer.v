@@ -4,6 +4,9 @@
 NOTES: 
 - This module only sends 3-phase-writes to the sccb controller
     - For our project this is all we need
+- Interface
+    - "ready" indicates a new register write request is able to be processed
+    - "valid" input indicates that reg_addr and write_data is set
 */
 
 module sccb_writer #(
