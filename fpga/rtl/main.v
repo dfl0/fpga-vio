@@ -80,11 +80,15 @@ module main (
     
     // UART HOOKUP
     localparam [15:0] MAGIC_HEADER = 16'hABCD;
-    // 16 bit header, 96 bit imu, 1024 (16x16 16 bits per pixel) bit image
-    localparam integer FRAME_SIZE = 1136;
-    reg [FRAME_SIZE-1:0] cur_frame;
-    reg uart_start;
+    localparam integer IMAGE_BITS = CROP_W * CROP_H * 16;
+    localparam integer FRAME_SIZE = 16 + 64 + 96 + IMAGE_BITS;
+    reg [6:0] us_div;
+    reg [63:0] time_us, imu_time_us;
+    reg [95:0] imu_data;
+    reg [IMAGE_BITS-1:0] latest_image;
+    reg imu_pending;
     wire uart_ready;
+    wire uart_start = imu_pending && uart_ready;
     uart_controller #(
         .BAUD_RATE(2_000_000),
         .FRAME_SIZE(FRAME_SIZE)
@@ -92,37 +96,33 @@ module main (
         .clk(clk),
         .rst(rst),
         .tx(tx),
-        .frame(cur_frame),
+        .frame({MAGIC_HEADER, imu_time_us, imu_data, latest_image}),
         .start(uart_start),
         .ready(uart_ready)
     );
 
-    /// FRAME UPDATE LOGIC
     always @(posedge clk) begin
-        uart_start <= 0;
-        // constantly send frames as uart is ready
-        if (uart_ready) begin
-            uart_start <= 1;
-        end
-        // update the current frame
-        if (camera1_ready) begin
-            cur_frame <= {
-                MAGIC_HEADER,
-                cur_frame[1023 +: 96],
-                camera1_image
-            };
-        end
-        if (imu_done) begin
-            cur_frame <= {
-                MAGIC_HEADER,
-                accel_x,
-                accel_y,
-                accel_z,
-                gyro_x,
-                gyro_y,
-                gyro_z,
-                cur_frame[0 +: 1024]
-            };
+        if (rst) begin
+            us_div <= 0;
+            time_us <= 0;
+            imu_pending <= 0;
+            latest_image <= 0;
+        end else begin
+            if (us_div == 99) begin
+                us_div <= 0;
+                time_us <= time_us + 1'b1;
+            end else begin
+                us_div <= us_div + 1'b1;
+            end
+            if (camera1_ready)
+                latest_image <= camera1_image;
+            if (uart_start)
+                imu_pending <= 0;
+            if (imu_done) begin
+                imu_time_us <= time_us;
+                imu_data <= {accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z};
+                imu_pending <= 1;
+            end
         end
     end
 

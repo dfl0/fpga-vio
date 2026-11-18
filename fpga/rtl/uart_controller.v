@@ -26,6 +26,7 @@ module uart_controller #(
 
 );       
     // TRANSMITTER
+    reg [7:0] current_packet;
     reg tx_start;
     wire tx_valid;
     wire tx_ready;
@@ -53,7 +54,6 @@ module uart_controller #(
     localparam integer PCK_CNT_WIDTH = $clog2(PACKET_COUNT);
     reg [FRAME_SIZE-1:0] loaded_frame;
     reg [PCK_CNT_WIDTH:0] packet_ctr;
-    reg [7:0] current_packet;
 
     always @(posedge clk) begin
         if (rst) begin
