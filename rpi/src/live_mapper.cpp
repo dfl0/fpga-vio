@@ -19,9 +19,12 @@ int runLiveMapping(StdinSource& source, mapping::Config config) {
     std::atomic<bool> stop{false};
     std::vector<CloudViewer::FramePose> pending_frames;
     std::size_t processed_frames = 0;
+    int imu_count = 0;
     bool finished = false, failed = false;
     std::string error;
 
+    if (mapper.initializing())
+        std::cerr << "Keep the IMU still for the first " << mapper.stationary_samples << " samples\n";
     viewer.open();
     std::thread worker([&]() {
         try {
@@ -37,6 +40,10 @@ int runLiveMapping(StdinSource& source, mapping::Config config) {
                     status == StdinSource::Poll::Error) {
                     std::lock_guard<std::mutex> lock(mutex);
                     finished = status == StdinSource::Poll::Finished;
+                    if (finished && mapper.initializing()) {
+                        finished = false;
+                        source_error = "Stream ended during stationary initialization";
+                    }
                     failed = !finished;
                     error = source_error;
                     break;
@@ -44,9 +51,18 @@ int runLiveMapping(StdinSource& source, mapping::Config config) {
 
                 std::lock_guard<std::mutex> lock(mutex);
                 if (event.kind == mapping::StreamEvent::Kind::Imu) {
+                    const bool initializing = mapper.initializing();
                     mapper.processImu(event.imu);
+                    ++imu_count;
+                    if (mapper.initializing()) continue;
+                    if (initializing) std::cerr << "Stationary initialization complete; tracking motion\n";
+                    if (source.imuOnly()) {
+                        pending_frames.push_back({imu_count, mapping::viewerPosition(
+                            mapper.pose(), config.initial_pose), std::nullopt});
+                    }
                     continue;
                 }
+                if (mapper.initializing()) continue;
                 const mapping::FrameResult result = mapper.processFrame(event.frame);
                 CloudViewer::FramePose frame;
                 frame.number = event.frame_number;
@@ -75,6 +91,7 @@ int runLiveMapping(StdinSource& source, mapping::Config config) {
             std::vector<CloudViewer::FramePose> frames;
             bool stream_finished = false, stream_failed = false;
             std::size_t total_points = 0, frame_count = 0;
+            int sample_count = 0;
             std::string stream_error;
             {
                 std::unique_lock<std::mutex> lock(mutex, std::try_to_lock);
@@ -91,21 +108,23 @@ int runLiveMapping(StdinSource& source, mapping::Config config) {
                 stream_error = error;
                 total_points = mapper.points().size();
                 frame_count = processed_frames;
+                sample_count = imu_count;
             }
             if (!frames.empty()) {
                 for (const auto& point : new_points) {
                     viewer.addPoint(point.x, point.y, point.z,
                                     point.red, point.green, point.blue);
                 }
-                viewer.appendFrames(viewer_updates++, frames);
+                viewer.appendFrames(viewer_updates++, frames, source.imuOnly());
             }
             if (stream_failed) {
                 std::cerr << stream_error << '\n';
                 reported = true;
                 viewer.close();
             } else if (stream_finished && !reported) {
-                std::cout << "Stream finished: " << frame_count << " frames, "
-                          << total_points << " points.\n";
+                if (source.imuOnly()) std::cout << "Stream finished: " << sample_count << " IMU samples.\n";
+                else std::cout << "Stream finished: " << frame_count << " frames, "
+                               << total_points << " points.\n";
                 reported = true;
             }
         } catch (const std::exception& exception) {
@@ -137,11 +156,15 @@ int runLiveMapping(StdinSource& source, mapping::Config config) {
 }  // namespace
 
 int main(int argc, char* argv[]) {
-    const bool explicit_stdin = argc == 3 &&
-        std::string(argv[1]) == "--source" && std::string(argv[2]) == "stdin";
-    if (argc != 1 && !explicit_stdin) {
-        std::cerr << "Usage: " << argv[0] << " [--source stdin] < data-stream\n";
-        return 1;
+    bool stationary_start = false;
+    for (int i = 1; i < argc; ++i) {
+        const std::string arg = argv[i];
+        if (arg == "--stationary-start") stationary_start = true;
+        else if (arg == "--source" && i + 1 < argc && std::string(argv[i + 1]) == "stdin") ++i;
+        else {
+            std::cerr << "Usage: live_mapper [--source stdin] [--stationary-start] < data-stream\n";
+            return 1;
+        }
     }
 
     StdinSource source;
@@ -150,6 +173,11 @@ int main(int argc, char* argv[]) {
     if (!source.open(config, error)) {
         std::cerr << error << '\n';
         return 1;
+    }
+    if (stationary_start) {
+        config.stationary_start = true;
+        config.initial_pose = {};
+        config.initial_velocity = {};
     }
     return runLiveMapping(source, config);
 }

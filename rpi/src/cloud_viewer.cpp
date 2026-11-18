@@ -72,7 +72,7 @@ void CloudViewer::finishFrame() {
 }
 
 void CloudViewer::appendFrames(
-    std::size_t batch, const std::vector<FramePose>& frames) {
+    std::size_t batch, const std::vector<FramePose>& frames, bool imu_only) {
     if (frames.empty()) return;
     for (const auto& frame : frames) {
         if (!active_trajectory_.actor) {
@@ -86,9 +86,9 @@ void CloudViewer::appendFrames(
             }
         }
     }
-    finishFrame();
+    if (!imu_only) finishFrame();
     showThroughFrameAt(batch, active_trajectory_.positions.size() - 1,
-                       frames.back().number);
+                       frames.back().number, imu_only);
 }
 
 void CloudViewer::makeTrajectory(
@@ -179,8 +179,8 @@ void CloudViewer::showThroughFrame(std::size_t index, int frame) {
 }
 
 void CloudViewer::showThroughFrameAt(
-    std::size_t actor_index, std::size_t pose_index, int frame) {
-    if (actor_index >= actors_.size() ||
+    std::size_t actor_index, std::size_t pose_index, int frame, bool imu_only) {
+    if ((!imu_only && actor_index >= actors_.size()) ||
         pose_index >= active_trajectory_.positions.size() ||
         interactor_->GetDone()) {
         return;
@@ -196,11 +196,12 @@ void CloudViewer::showThroughFrameAt(
         marker_points_->Modified();
     }
     if (!camera_set_) {
-        renderer_->ResetCamera();
+        if (imu_only) renderer_->ResetCamera(-0.5, 0.5, -0.5, 0.5, -0.5, 0.5);
+        else renderer_->ResetCamera();
         camera_set_ = true;
     }
     renderer_->ResetCameraClippingRange();
-    const std::string title = "Growing point cloud - frame " +
+    const std::string title = std::string(imu_only ? "IMU trajectory - sample " : "Growing point cloud - frame ") +
         std::to_string(frame) + " (" + std::to_string(pose_index + 1) + "/" +
         std::to_string(active_trajectory_.positions.size()) + ")" +
         (truth_trajectory_.positions.empty()

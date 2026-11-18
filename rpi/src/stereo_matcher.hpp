@@ -2,7 +2,12 @@
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/core/version.hpp>
+#if CV_VERSION_MAJOR >= 5
 #include <opencv2/stereo.hpp>
+#else
+#include <opencv2/calib3d.hpp>
+#endif
 
 namespace stereo {
 

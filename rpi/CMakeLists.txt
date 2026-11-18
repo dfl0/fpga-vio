@@ -10,8 +10,13 @@ find_package(OpenCV REQUIRED COMPONENTS
     imgcodecs
     imgproc
     highgui
-    stereo
+    OPTIONAL_COMPONENTS calib3d stereo
 )
+if(OpenCV_VERSION_MAJOR EQUAL 4 AND NOT OpenCV_calib3d_FOUND)
+    message(FATAL_ERROR "OpenCV 4 requires the calib3d module for stereo matching")
+elseif(OpenCV_VERSION_MAJOR GREATER_EQUAL 5 AND NOT OpenCV_stereo_FOUND)
+    message(FATAL_ERROR "OpenCV 5 requires the stereo module for stereo matching")
+endif()
 find_package(Threads REQUIRED)
 
 add_executable(stereo_viewer src/stereo_viewer.cpp)
@@ -26,6 +31,10 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/tartanair_cloud.cpp")
     target_include_directories(tartanair_cloud PRIVATE ${OpenCV_INCLUDE_DIRS})
     target_link_libraries(tartanair_cloud PRIVATE ${OpenCV_LIBS})
 endif()
+
+add_executable(uart_bridge src/uart_bridge.cpp src/stream_writer.cpp)
+target_include_directories(uart_bridge PRIVATE ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(uart_bridge PRIVATE ${OpenCV_LIBS})
 
 add_executable(tartanair_feed
     src/tartanair_feed.cpp

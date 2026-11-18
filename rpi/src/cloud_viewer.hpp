@@ -30,7 +30,8 @@ public:
     void addPoint(float x, float y, float z,
                   unsigned char red, unsigned char green, unsigned char blue);
     void finishFrame();
-    void appendFrames(std::size_t batch, const std::vector<FramePose>& frames);
+    void appendFrames(std::size_t batch, const std::vector<FramePose>& frames,
+                      bool imu_only = false);
     void setTrajectories(std::vector<std::array<float, 3>> active,
                          std::vector<std::array<float, 3>> truth = {});
     void showThroughFrame(std::size_t index, int frame);
@@ -54,7 +55,7 @@ private:
                         double red, double green, double blue);
     void showTrajectory(Trajectory& trajectory, std::size_t index);
     void showThroughFrameAt(std::size_t actor_index,
-                            std::size_t pose_index, int frame);
+                            std::size_t pose_index, int frame, bool imu_only = false);
 
     vtkSmartPointer<vtkPoints> points_;
     vtkSmartPointer<vtkCellArray> vertices_;

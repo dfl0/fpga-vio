@@ -43,8 +43,9 @@ struct CloudPoint {
 };
 
 struct Config {
-    StereoGeometry camera;
+    StereoGeometry camera{};
     bool imu_pose = false;
+    bool stationary_start = false;
     stereo::MatcherAlgorithm matcher = stereo::MatcherAlgorithm::Bm;
     int disparities = 64;
     int block_size = 15;
@@ -69,7 +70,10 @@ class CloudMapper {
 public:
     explicit CloudMapper(Config config);
 
-    void processImu(const ImuSample& sample);
+    const Pose& pose() const { return pose_; }
+    static constexpr int stationary_samples = 100;
+    bool initializing() const { return config_.stationary_start && startup_count_ < stationary_samples; }
+    void processImu(ImuSample sample);
     FrameResult processFrame(const Frame& frame);
     const std::vector<CloudPoint>& points() const { return points_; }
 
@@ -84,6 +88,8 @@ private:
     cv::Vec3d velocity_;
     double time_;
     ImuSample previous_{};
+    int startup_count_ = 0;
+    cv::Vec3d accel_sum_{}, gyro_bias_{};
     bool have_previous_ = false;
     std::vector<CloudPoint> points_;
 };

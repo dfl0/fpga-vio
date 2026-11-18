@@ -75,10 +75,22 @@ void CloudMapper::integrate(const cv::Vec3d& first_acceleration,
     time_ += dt;
 }
 
-void CloudMapper::processImu(const ImuSample& sample) {
+void CloudMapper::processImu(ImuSample sample) {
     if (have_previous_ && sample.time <= previous_.time) {
         throw std::runtime_error("IMU timestamps must increase");
     }
+    if (initializing()) {
+        accel_sum_ += sample.acceleration;
+        gyro_bias_ += sample.angular_velocity;
+        ++startup_count_;
+        previous_ = sample;
+        have_previous_ = true;
+        if (initializing()) return;
+        config_.gravity = -rotate(pose_.quaternion, accel_sum_ / stationary_samples);
+        gyro_bias_ /= stationary_samples;
+        time_ = sample.time;
+    }
+    sample.angular_velocity -= gyro_bias_;
     if (config_.imu_pose && have_previous_ && sample.time > time_) {
         const double start = std::max(time_, previous_.time);
         const double fraction = (start - previous_.time) /

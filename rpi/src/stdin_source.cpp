@@ -57,31 +57,44 @@ bool StdinSource::open(mapping::Config& config, std::string& error) {
     auto& p = config.initial_pose;
     auto& v = config.initial_velocity;
     auto& g = config.gravity;
-    if (!(input >> magic >> version >> width_ >> height_
-          >> c.fx >> c.fy >> c.cx >> c.cy >> c.baseline
-          >> g[0] >> g[1] >> g[2]
-          >> p.position[0] >> p.position[1] >> p.position[2]
-          >> p.quaternion[0] >> p.quaternion[1] >> p.quaternion[2]
-          >> p.quaternion[3]
-          >> v[0] >> v[1] >> v[2]
-          >> config.initial_time >> config.max_depth_m
-          >> config.disparities >> config.block_size >> matcher)) {
+    if (!(input >> magic >> version)) {
         error = "Invalid stream header";
         return false;
     }
-    if (!noMoreFields(input) || magic != "FVIO_STREAM" || version != 1 ||
-        width_ <= 0 || height_ <= 0 || width_ > 4096 || height_ > 4096 ||
-        !std::isfinite(c.fx) || !std::isfinite(c.fy) ||
-        !std::isfinite(c.cx) || !std::isfinite(c.cy) ||
-        !std::isfinite(c.baseline) || c.fx <= 0 || c.fy <= 0 ||
-        c.baseline <= 0 || config.max_depth_m <= 0 ||
-        config.disparities <= 0 || config.block_size <= 0 ||
-        (matcher != static_cast<int>(stereo::MatcherAlgorithm::Bm) &&
-         matcher != static_cast<int>(stereo::MatcherAlgorithm::Sgbm))) {
-        error = "Invalid stream header";
-        return false;
+    if (magic == "FVIO_IMU") {
+        config.stationary_start = version == 2;
+        const bool supplied = version == 1 && (input >> g[0] >> g[1] >> g[2]) && cv::checkRange(g);
+        if ((!supplied && !config.stationary_start) || !noMoreFields(input)) {
+            error = "Invalid IMU stream header";
+            return false;
+        }
+    } else {
+        if (!(input >> width_ >> height_
+              >> c.fx >> c.fy >> c.cx >> c.cy >> c.baseline
+              >> g[0] >> g[1] >> g[2]
+              >> p.position[0] >> p.position[1] >> p.position[2]
+              >> p.quaternion[0] >> p.quaternion[1] >> p.quaternion[2]
+              >> p.quaternion[3]
+              >> v[0] >> v[1] >> v[2]
+              >> config.initial_time >> config.max_depth_m
+              >> config.disparities >> config.block_size >> matcher)) {
+            error = "Invalid stream header";
+            return false;
+        }
+        if (!noMoreFields(input) || magic != "FVIO_STREAM" || version != 1 ||
+            width_ <= 0 || height_ <= 0 || width_ > 4096 || height_ > 4096 ||
+            !std::isfinite(c.fx) || !std::isfinite(c.fy) ||
+            !std::isfinite(c.cx) || !std::isfinite(c.cy) ||
+            !std::isfinite(c.baseline) || c.fx <= 0 || c.fy <= 0 ||
+            c.baseline <= 0 || config.max_depth_m <= 0 ||
+            config.disparities <= 0 || config.block_size <= 0 ||
+            (matcher != static_cast<int>(stereo::MatcherAlgorithm::Bm) &&
+             matcher != static_cast<int>(stereo::MatcherAlgorithm::Sgbm))) {
+            error = "Invalid stream header";
+            return false;
+        }
+        config.matcher = static_cast<stereo::MatcherAlgorithm>(matcher);
     }
-    config.matcher = static_cast<stereo::MatcherAlgorithm>(matcher);
     config.imu_pose = true;
     image_bytes_ = static_cast<std::size_t>(width_) * height_ * 4;
 
@@ -142,7 +155,7 @@ StdinSource::Poll StdinSource::poll(
                     }
                     return Poll::Ready;
                 }
-                if (kind == 'F') {
+                if (kind == 'F' && !imuOnly()) {
                     if (!(input >> pending_frame_number_ >> pending_frame_time_) ||
                         !noMoreFields(input) || pending_frame_number_ < 0 ||
                         !std::isfinite(pending_frame_time_)) {

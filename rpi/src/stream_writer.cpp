@@ -5,6 +5,11 @@
 
 #include <opencv2/imgproc.hpp>
 
+bool writeImuStreamHeader(std::ostream& out) {
+    out << "FVIO_IMU 2\n";
+    return static_cast<bool>(out);
+}
+
 bool writeStreamHeader(std::ostream& out, const mapping::Config& config,
                        cv::Size image_size) {
     const auto& c = config.camera;

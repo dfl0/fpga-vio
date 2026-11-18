@@ -9,7 +9,6 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
-#include <opencv2/stereo.hpp>
 
 #include "display_window.hpp"
 #include "stereo_matcher.hpp"

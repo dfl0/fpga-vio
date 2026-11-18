@@ -9,6 +9,7 @@ class StdinSource {
 public:
     enum class Poll { Ready, Waiting, Finished, Error };
 
+    bool imuOnly() const { return width_ == 0; }
     ~StdinSource();
     bool open(mapping::Config& config, std::string& error);
     Poll poll(mapping::StreamEvent& event, std::string& error);
