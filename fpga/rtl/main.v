@@ -15,11 +15,6 @@ module main (
     output wire mosi,  // JA3 -> SDA
     input wire miso,   // JA4 -> SDO
 
-    // sseg
-    output wire [3:0] anode,
-    output wire [6:0] seg_out,
-    output wire dp,
-
     // camera1
     output wire sio_c,
     inout wire sio_d,
@@ -34,7 +29,6 @@ module main (
     localparam integer CROP_H = 8;
     wire camera1_ready;
     wire [CROP_W*CROP_H*16-1:0] camera1_image;
-
     ov7670_controller #(
         .XCLK_FREQ(10_000_000),
         .CROP_W(CROP_W),
@@ -101,6 +95,7 @@ module main (
         .ready(uart_ready)
     );
 
+    // NOTE: this would be a good place to add scheduler
     always @(posedge clk) begin
         if (rst) begin
             us_div <= 0;
@@ -122,36 +117,6 @@ module main (
                 imu_time_us <= time_us;
                 imu_data <= {accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z};
                 imu_pending <= 1;
-            end
-        end
-    end
-
-    /// SSEG DISPLAY CODE
-    reg [15:0] display_value;
-    sseg display (
-        .clk(clk),
-        .rst(rst),
-        .anode(anode),
-        .seg_out(seg_out),
-        .dp(dp),
-        .display_value(display_value)
-    );
-
-    // Normal Freq Implementation
-    // always @(*) begin
-    //     display_value = accel_x;
-    // end
-
-    // Lower Freq Implementation
-    reg [20:0] delay;
-    always @(posedge clk) begin
-        if (rst) begin
-            delay <= 1;
-        end else begin
-            if (delay == 0) begin
-                display_value <= accel_x;
-            end else begin
-                delay <= delay + 1;
             end
         end
     end
