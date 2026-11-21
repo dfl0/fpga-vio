@@ -25,8 +25,6 @@ module ov7670_controller #(
     parameter integer HEIGHT = 120,
 
     // NOTE: TEMPORARY CROP (set to middle 16x16 of QQVGA for now)
-    parameter integer CROP_X = 320,
-    parameter integer CROP_Y = 240,
     parameter integer CROP_W = 8,
     parameter integer CROP_H = 8
 
@@ -113,19 +111,29 @@ module ov7670_controller #(
     reg current_state;
     integer cur_row, cur_col, byte_addr;
 
-    // NOTE: TEMPORARY CROP CHANGES
+    // switch back to this
     // always @(*) byte_addr = cur_row*WIDTH*16 + (cur_col ^ 1)*8;
-    always @(*) byte_addr = (cur_row - CROP_Y)*CROP_W*16 + ((cur_col - 2*CROP_X) ^ 1)*8;
-    wire in_crop = (cur_row >= CROP_Y) && (cur_row < CROP_Y + CROP_H) &&
-                   (cur_col >= 2*CROP_X) && (cur_col < 2*(CROP_X + CROP_W));
+    
+    // NOTE: TEMPORARY CROP CHANGES
+    integer crop_x, crop_y;
+    localparam integer CROP_X_MAX = WIDTH - CROP_W - 1;
+    localparam integer CROP_Y_MAX = WIDTH - CROP_H - 1;
+    always @(*) byte_addr = (cur_row - crop_y)*CROP_W*16 + ((cur_col - 2*crop_x) ^ 1)*8;
+    wire in_crop = (cur_row >= crop_x) && (cur_row < crop_y + CROP_H) &&
+                   (cur_col >= 2*crop_x) && (cur_col < 2*(crop_x + CROP_W));
 
     always @(posedge clk) begin
         // set ready to 0 every cycle
         ready <= 0;
+
+        // DEBUG set crops to start at 0 0 initially
+        crop_x <= 0;
+        crop_y <= 0;
         if (rst) begin
             // start the initialization seq
             current_state <= IDLE;
             init_start <= 1;
+
         end else begin
             case (current_state)
                 // initialize
@@ -143,6 +151,13 @@ module ov7670_controller #(
                         ready <= 1;
                         cur_row <= 0;
                         cur_col <= 0;
+
+                        // DEBUG: update the crop counter as well
+                        if (crop_x == CROP_X_MAX) crop_x <= 0;
+                        else crop_x <= crop_x + 1;
+                        if (crop_y == CROP_Y_MAX) crop_y <= 0;
+                        else crop_y <= crop_y + 1;
+
                     end
                     // if we received a new byte for current row
                     if (byte_valid) begin

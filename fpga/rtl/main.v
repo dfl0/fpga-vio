@@ -31,6 +31,8 @@ module main (
     wire [CROP_W*CROP_H*16-1:0] camera1_image;
     ov7670_controller #(
         .XCLK_FREQ(10_000_000),
+        .WIDTH(640),
+        .HEIGHT(480),
         .CROP_W(CROP_W),
         .CROP_H(CROP_H)
     ) camera1 (
