@@ -44,7 +44,7 @@ module ov7670_controller #(
     input wire [7:0] d,
 
     // module interface
-    output reg ready, // 1 clk pulse when a full frame is stored
+    output reg frame_ready, // 1 clk pulse when a full frame is stored
 
     // NOTE: TEMPORARY CROP
     // output reg [WIDTH*HEIGHT*16-1:0] image // 16 bits per pixel, row by row
@@ -52,14 +52,12 @@ module ov7670_controller #(
 );
 
     // HOOKUP OV7670 INITIALIZER
-    reg init_start;
     wire init_done;
     ov7670_init #(.SCCB_FREQ(SCCB_FREQ)) init (
         .clk(clk),
         .rst(rst),
         .sio_c(sio_c),
         .sio_d(sio_d),
-        .start(init_start),
         .done(init_done)
     );
 
@@ -105,40 +103,31 @@ module ov7670_controller #(
     wire href_fall  = pclk_rise && !href  &&  href_prev;
     wire vsync_rise = pclk_rise &&  vsync && !vsync_prev;
 
-    // VIDEO CAPTURE
-    localparam IDLE    = 1'b0,
-               CAPTURE = 1'b1;
+    // VIDEO CAPTURE LOGI
+    localparam STARTUP  = 1'b0,
+               CAPTURE  = 1'b1;
     reg current_state;
     integer cur_row, cur_col, byte_addr;
-
     // switch back to this
     // always @(*) byte_addr = cur_row*WIDTH*16 + (cur_col ^ 1)*8;
     
     // NOTE: TEMPORARY CROP CHANGES
     integer crop_x, crop_y;
     localparam integer CROP_X_MAX = WIDTH - CROP_W - 1;
-    localparam integer CROP_Y_MAX = WIDTH - CROP_H - 1;
+    localparam integer CROP_Y_MAX = HEIGHT - CROP_H - 1;
     always @(*) byte_addr = (cur_row - crop_y)*CROP_W*16 + ((cur_col - 2*crop_x) ^ 1)*8;
-    wire in_crop = (cur_row >= crop_x) && (cur_row < crop_y + CROP_H) &&
+    wire in_crop = (cur_row >= crop_y) && (cur_row < crop_y + CROP_H) &&
                    (cur_col >= 2*crop_x) && (cur_col < 2*(crop_x + CROP_W));
 
     always @(posedge clk) begin
-        // set ready to 0 every cycle
-        ready <= 0;
-
-        // DEBUG set crops to start at 0 0 initially
-        crop_x <= 0;
-        crop_y <= 0;
         if (rst) begin
-            // start the initialization seq
-            current_state <= IDLE;
-            init_start <= 1;
-
+            current_state <= STARTUP;
+            // DEBUG: added crops for now
+            crop_x <= 0;
+            crop_y <= 0;
         end else begin
             case (current_state)
-                // initialize
-                IDLE: begin
-                    init_start <= 0;
+                STARTUP: begin
                     if (init_done && vsync_rise) begin
                         current_state <= CAPTURE;
                         cur_row <= 0;
@@ -146,26 +135,28 @@ module ov7670_controller #(
                     end
                 end
                 CAPTURE: begin
-                    // if we got a new frame
+                    // one frame fully processed
                     if (vsync_rise) begin
-                        ready <= 1;
+                        frame_ready <= 1;
                         cur_row <= 0;
                         cur_col <= 0;
-
+                        frame_ready <= 1;
                         // DEBUG: update the crop counter as well
                         if (crop_x == CROP_X_MAX) crop_x <= 0;
                         else crop_x <= crop_x + 1;
                         if (crop_y == CROP_Y_MAX) crop_y <= 0;
                         else crop_y <= crop_y + 1;
-
+                    end else begin
+                        // frame not ready yet
+                        frame_ready <= 0;
                     end
+
                     // if we received a new byte for current row
                     if (byte_valid) begin
-                        // NOTE: TEMPORARY CROP 
-                        // image[byte_addr +: 8] <= d;
-                        if (in_crop) image[byte_addr +: 8] <= d;
-
                         cur_col <= cur_col + 1;
+                        // image[byte_addr +: 8] <= d;
+                        // DEBUG: TEMPORARY CROP UUPDATE 
+                        if (in_crop) image[byte_addr +: 8] <= d;
                     end
                     // done reading current row
                     if (href_fall) begin
@@ -173,9 +164,9 @@ module ov7670_controller #(
                         cur_col <= 0;
                     end
                 end
+                // NOTE: this wont actually rerun startup sequence, that only happens on reset
                 default: begin
-                    init_start <= 1;
-                    current_state <= IDLE;
+                    current_state <= STARTUP;
                 end
             endcase
         end

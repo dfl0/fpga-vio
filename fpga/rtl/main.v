@@ -45,7 +45,7 @@ module main (
         .href(href),
         .vsync(vsync),
         .d(d),
-        .ready(camera1_ready),
+        .frame_ready(camera1_ready),
         .image(camera1_image)
     );
 
